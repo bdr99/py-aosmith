@@ -176,7 +176,7 @@ class AOSmithAPIClient:
         if response.get("data", {}).get("updateSetpoint") != True:
             raise AOSmithUnknownException("Failed to update setpoint")
 
-    async def get_energy_use_data(self, dsn: str, device_type: str):
+    async def __get_energy_use_data_by_dsn(self, dsn: str, device_type: str):
         response = await self.__send_graphql_query(
             "query getEnergyUseData($dsn: String!, $deviceType: DeviceType!) { getEnergyUseData(dsn: $dsn, deviceType: $deviceType) { average graphData { date kwh } lifetimeKwh startDate } }",
             {
@@ -188,7 +188,7 @@ class AOSmithAPIClient:
 
         return response.get("data", {}).get("getEnergyUseData")
 
-    async def get_energy_use_data_by_junction_id(self, junction_id: str):
+    async def get_energy_use_data(self, junction_id: str):
         device = await self.__get_device_by_junction_id(junction_id)
         return await self.get_energy_use_data(device.get("dsn"), device.get("deviceType"))
 
