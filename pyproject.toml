@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "py-aosmith"
+version = "0.1.0"
+description = "A Python client library for A. O. Smith water heaters"
+authors = ["Brandon Rothweiler <brandonrothweiler@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/bdr99/py-aosmith"
+repository = "https://github.com/bdr99/py-aosmith"
+documentation = "https://github.com/bdr99/py-aosmith"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiohttp = "^3.8.6"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
