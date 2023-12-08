@@ -1,3 +1,4 @@
+import asyncio
 import aiohttp
 import base64
 import json
@@ -50,6 +51,8 @@ query devices($forceUpdate: Boolean, $junctionIds: [String]) {
 
 MAX_RETRIES = 2
 
+TIMEOUT = aiohttp.ClientTimeout(total=20)
+
 def build_passcode(email, password):
     data = {'email': email, 'password': password}
     json_string = json.dumps(data)
@@ -83,15 +86,19 @@ class AOSmithAPIClient:
 
             headers["Authorization"] = f"Bearer {self.token}"
 
-        response = await self.session.request(
-            method="POST",
-            url=API_BASE_URL + "/graphql",
-            headers=headers,
-            json={
-                "query": query,
-                "variables": variables
-            }
-        )
+        try:
+            response = await self.session.request(
+                method="POST",
+                url=API_BASE_URL + "/graphql",
+                headers=headers,
+                json={
+                    "query": query,
+                    "variables": variables
+                },
+                timeout=TIMEOUT
+            )
+        except asyncio.TimeoutError:
+            raise AOSmithUnknownException("Request timed out")
 
         if response.status == 401:
             # Access token may be expired - try to log in again
