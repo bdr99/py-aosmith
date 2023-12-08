@@ -190,7 +190,7 @@ class AOSmithAPIClient:
 
     async def get_energy_use_data(self, junction_id: str):
         device = await self.__get_device_by_junction_id(junction_id)
-        return await self.get_energy_use_data(device.get("dsn"), device.get("deviceType"))
+        return await self.__get_energy_use_data_by_dsn(device.get("dsn"), device.get("deviceType"))
 
     async def update_mode(self, junction_id: str, mode: str, days: int | None = None):
         device = await self.__get_device_by_junction_id(junction_id)
