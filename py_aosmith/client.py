@@ -1,7 +1,8 @@
-import asyncio
 import aiohttp
+import asyncio
 import base64
 import json
+import logging
 import urllib.parse
 
 from .exceptions import (
@@ -374,9 +375,14 @@ class AOSmithAPIClient:
         else:
             self.session = session
 
+        self.logger = logging.getLogger(__name__)
+
     async def __send_graphql_query(self, query: str, variables: dict, login_required: bool, retry_count: int = 0):
         if retry_count > MAX_RETRIES:
             raise AOSmithUnknownException("Request failed - max retries exceeded")
+
+        query_log = query.replace('\n', ' ')
+        self.logger.debug(f"Sending query, variables: {variables}, login_required: {login_required}, retry_count: {retry_count}, query: {query_log}")
 
         headers = {}
 
@@ -385,6 +391,7 @@ class AOSmithAPIClient:
                 await self.__login()
                 if self.token is None:
                     raise AOSmithUnknownException("Login failed")
+                self.logger.debug("Successfully logged in")
 
             headers["Authorization"] = f"Bearer {self.token}"
 
@@ -399,11 +406,16 @@ class AOSmithAPIClient:
                 },
                 timeout=TIMEOUT
             )
+            self.logger.debug(f"Received response, status code: {response.status}")
+            self.logger.debug(f"Response body: {await response.text()}")
         except asyncio.TimeoutError:
             raise AOSmithUnknownException("Request timed out")
+        except Exception as err:
+            self.logger.exception("Request failed", exc_info=err)
+            raise AOSmithUnknownException("Request failed")
 
         if response.status == 401:
-            # Access token may be expired - try to log in again
+            self.logger.debug("Access token may be expired - trying to log in again")
             await self.__login()
             return await self.__send_graphql_query(query, variables, login_required, retry_count=retry_count + 1)
         elif response.status != 200:
