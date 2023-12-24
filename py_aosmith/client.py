@@ -102,7 +102,6 @@ class AOSmithAPIClient:
 
         if response.status == 401:
             # Access token may be expired - try to log in again
-            print(401)
             await self.__login()
             return await self.__send_graphql_query(query, variables, login_required, retry_count=retry_count + 1)
         elif response.status != 200:
