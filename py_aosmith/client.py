@@ -49,6 +49,308 @@ query devices($forceUpdate: Boolean, $junctionIds: [String]) {
 }
 """
 
+ALL_DEVICE_DATA_GRAPHQL_QUERY = """
+query devices($forceUpdate: Boolean, $junctionIds: [String]) {
+  devices(forceUpdate: $forceUpdate, junctionIds: $junctionIds) {
+    alertSettings {
+      faultCode {
+        major {
+          email
+          sms
+        }
+        minor {
+          email
+          sms
+        }
+      }
+      operatingSetPoint {
+        email
+        sms
+      }
+      tankTemperature {
+        highTemperature {
+          email
+          sms
+
+          value
+        }
+        lowTemperature {
+          email
+          sms
+
+          value
+        }
+      }
+    }
+    brand
+    deviceType
+    dsn
+    hardware {
+      hasBluetooth
+      interface
+    }
+    id
+    install {
+      address
+      city
+      country
+      date
+      email
+      group
+      location
+      phone
+      postalCode
+      professional
+      registeredOwner
+      registrationDate
+      state
+    }
+    isRegistered
+    junctionId
+    lastUpdate
+    model
+    name
+    permissions
+    productId
+    serial
+    users {
+      contactId
+      email
+      firstName
+      isSelf
+      lastName
+      permissions
+    }
+
+    data {
+      activeAlerts {
+        active
+        code
+        information {
+          en {
+            advancedText
+            advancedTitle
+            text
+            title
+          }
+          fr {
+            advancedText
+            advancedTitle
+            text
+            title
+          }
+        }
+        shouldRestrictChanges
+        shouldShowSoftReset
+        timestamp
+        type
+      }
+      alertHistory {
+        active
+        code
+        information {
+          en {
+            advancedText
+            advancedTitle
+            text
+            title
+          }
+          fr {
+            advancedText
+            advancedTitle
+            text
+            title
+          }
+        }
+        shouldRestrictChanges
+        shouldShowSoftReset
+        timestamp
+        type
+      }
+      isOnline
+      isWifi
+      lastUpdate
+      signalStrength
+      heaterSsid
+      ssid
+      temperatureSetpoint
+      temperatureSetpointPending
+      temperatureSetpointPrevious
+      temperatureSetpointMaximum
+      error
+      modes {
+        mode
+        controls
+      }
+
+      ... on HeatPump {
+        firmwareVersion
+        isAdvancedLoadUpMore
+        isDemandResponsePaused
+        isEnrolled
+        isLeakDetectionOn
+        leakDetectionStatus
+        mode
+        modePending
+        canEditTimeOfUse
+        hotWaterStatus
+
+        timeOfUseData {
+          appliedOn
+          energyUsePreference
+          tariffCode
+          tariffID
+          utility
+          utilityID
+        }
+      }
+
+      ... on CommercialGas {
+        blockedInletPS
+        blockedOutletPS
+        blowerProverPS
+        burnerOnTime
+        ccbVersion
+        ecoContact
+        elapsedTime
+        hasIdr
+        ignitionTrials
+        isExternalEnabled
+        isFlameDetected
+        isGasValveOn
+        isIdrEnabled
+        isIgniterOn
+        isUseExternalEnabled
+        lowGasPS
+        operatingMode
+        status
+        temperatureActual
+        temperatureDifferential
+        temperatureDifferentialPending
+        temperatureDifferentialPrevious
+        totalCycleCount
+        uimVersion
+      }
+
+      ... on RE3Connected {
+        firmwareVersion
+        hotWaterStatus
+        isAdvancedLoadUpMore
+        isCtaUcmPresent
+        isDemandResponsePaused
+        isEnrolled
+        mode
+        modePending
+        vacationModeRemainingDays
+        isLowes
+        isAltMcu
+        canEditTimeOfUse
+
+        timeOfUseData {
+          appliedOn
+          energyUsePreference
+          tariffCode
+          tariffID
+          utility
+          utilityID
+        }
+
+        consumerScheduleData {
+          appliedOn
+          schedules {
+            days
+            id
+            name
+            times {
+              time
+              meridiem
+            }
+          }
+        }
+      }
+
+      ... on NextGenHeatPump {
+        firmwareVersion
+        hotWaterStatus
+        isAdvancedLoadUpMore
+        isCtaUcmPresent
+        isDemandResponsePaused
+        isEnrolled
+        mode
+        modePending
+        vacationModeRemainingDays
+        electricModeRemainingDays
+        isLowes
+        canEditTimeOfUse
+
+        timeOfUseData {
+          appliedOn
+          energyUsePreference
+          tariffCode
+          tariffID
+          utility
+          utilityID
+        }
+
+        consumerScheduleData {
+          appliedOn
+          schedules {
+            days
+            id
+            name
+            times {
+              time
+              meridiem
+            }
+          }
+        }
+      }
+
+      ... on RE3Premium {
+        firmwareVersion
+        hotWaterStatus
+        isAdvancedLoadUpMore
+        isCtaUcmPresent
+        isDemandResponsePaused
+        isEnrolled
+        mode
+        modePending
+        vacationModeRemainingDays
+        guestModeRemainingDays
+        canEditTimeOfUse
+        hotWaterPlusLevel
+
+        timeOfUseData {
+          appliedOn
+          energyUsePreference
+          tariffCode
+          tariffID
+          utility
+          utilityID
+        }
+
+        consumerScheduleData {
+          appliedOn
+          schedules {
+            days
+            id
+            name
+            times {
+              time
+              meridiem
+            }
+          }
+        }
+      }
+
+      ... on Mustang {
+        firmwareVersion
+      }
+    }
+  }
+}
+"""
+
 MAX_RETRIES = 2
 
 TIMEOUT = aiohttp.ClientTimeout(total=20)
@@ -226,6 +528,21 @@ class AOSmithAPIClient:
 
         if response.get("data", {}).get("updateMode") != True:
             raise AOSmithUnknownException("Failed to update mode")
+
+    async def get_all_device_info(self):
+        all_device_data_response = await self.__send_graphql_query(ALL_DEVICE_DATA_GRAPHQL_QUERY, { "forceUpdate": True }, True)
+        all_device_data = all_device_data_response.get("data", {}).get("devices", [])
+
+        energy_use_data_by_junction_id = {}
+        for device in all_device_data:
+            junction_id = device.get("junctionId")
+            energy_use_data = await self.get_energy_use_data(junction_id)
+            energy_use_data_by_junction_id[junction_id] = energy_use_data
+
+        return {
+            "devices": all_device_data,
+            "energy_use_data": energy_use_data_by_junction_id
+        }
 
     async def close(self):
         await self.session.close()
