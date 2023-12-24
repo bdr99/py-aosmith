@@ -10,7 +10,7 @@ from .exceptions import (
     AOSmithUnknownException
 )
 
-API_BASE_URL = "https://r2.wh8.co"
+API_BASE_URL = "https://r1.wh8.co"
 
 DEVICES_GRAPHQL_QUERY = """
 query devices($forceUpdate: Boolean, $junctionIds: [String]) {
