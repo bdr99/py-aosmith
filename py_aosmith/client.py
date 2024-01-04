@@ -50,6 +50,20 @@ query devices($forceUpdate: Boolean, $junctionIds: [String]) {
 }
 """
 
+DEVICES_BASIC_INFO_GRAPHQL_QUERY = """
+query devices($forceUpdate: Boolean, $junctionIds: [String]) {
+    devices(forceUpdate: $forceUpdate, junctionIds: $junctionIds) {
+        brand
+        model
+        deviceType
+        dsn
+        junctionId
+        name
+        serial
+    }
+}
+"""
+
 ALL_DEVICE_DATA_GRAPHQL_QUERY = """
 query devices($forceUpdate: Boolean, $junctionIds: [String]) {
   devices(forceUpdate: $forceUpdate, junctionIds: $junctionIds) {
@@ -472,6 +486,19 @@ class AOSmithAPIClient:
 
         return device
 
+    async def __get_device_basic_info_by_junction_id(self, junction_id: str):
+        response = await self.__send_graphql_query(DEVICES_BASIC_INFO_GRAPHQL_QUERY, { "forceUpdate": True }, True)
+
+        devices = response.get("data", {}).get("devices", None)
+        if devices is None:
+            raise AOSmithUnknownException("Failed to retrieve devices")
+
+        device = next(filter(lambda device: device.get("junctionId") == junction_id, devices), None)
+        if device is None:
+            raise AOSmithUnknownException("Device not found")
+
+        return device
+
     async def update_setpoint(self, junction_id: str, setpoint: int):
         if setpoint < 95:
             raise AOSmithInvalidParametersException("Setpoint is below the minimum")
@@ -510,7 +537,7 @@ class AOSmithAPIClient:
         return response.get("data", {}).get("getEnergyUseData")
 
     async def get_energy_use_data(self, junction_id: str):
-        device = await self.__get_device_by_junction_id(junction_id)
+        device = await self.__get_device_basic_info_by_junction_id(junction_id)
         return await self.__get_energy_use_data_by_dsn(device.get("dsn"), device.get("deviceType"))
 
     async def update_mode(self, junction_id: str, mode: str, days: int | None = None):
