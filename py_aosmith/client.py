@@ -549,8 +549,11 @@ class AOSmithAPIClient:
         energy_use_data_by_junction_id = {}
         for device in all_device_data:
             junction_id = device.get("junctionId")
-            energy_use_data = await self.get_energy_use_data(junction_id)
-            energy_use_data_by_junction_id[junction_id] = energy_use_data
+            try:
+                energy_use_data = await self.get_energy_use_data(junction_id)
+                energy_use_data_by_junction_id[junction_id] = energy_use_data
+            except Exception as err:
+                self.logger.exception("Failed to get energy use data", exc_info=err)
 
         return {
             "devices": all_device_data,
