@@ -124,6 +124,7 @@ query devices($forceUpdate: Boolean, $junctionIds: [String]) {
     }
 
     data {
+      __typename
       activeAlerts {
         active
         code
