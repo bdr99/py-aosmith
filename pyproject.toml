@@ -8,6 +8,11 @@ readme = "README.md"
 homepage = "https://github.com/bdr99/py-aosmith"
 repository = "https://github.com/bdr99/py-aosmith"
 documentation = "https://github.com/bdr99/py-aosmith"
+packages = [
+  {include = "py_aosmith"},
+  {include = "py_aosmith/py.typed"},
+]
+
 
 [tool.poetry.dependencies]
 python = "^3.10"

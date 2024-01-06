@@ -25,6 +25,7 @@ This example initializes the API client and gets a list of water heaters linked 
 
 ```python
 from py_aosmith import AOSmithAPIClient
+from py_aosmith.models import OperationMode
 
 # Initialize API client
 client = AOSmithAPIClient("myemail@example.com", "mypassword")
@@ -35,7 +36,10 @@ devices = await client.get_devices()
 # Loop through the registered water heaters
 for device in devices:
     # Update the setpoint to 120 degrees
-    await client.update_setpoint(device.get("junctionId"), 120);
+    await client.update_setpoint(device.junction_id, 120);
+
+    # Set the operation mode to heat pump
+    await client.update_mode(device.junction_id, OperationMode.HEAT_PUMP)
 ```
 
 # API Documentation
@@ -73,52 +77,51 @@ None
 
 ### Return value
 
-```jsonc
+```python
 [
-    {
-        "brand": "aosmith",
-        "model": "HPTS-50 200 202172000",
-        "deviceType": "NEXT_GEN_HEAT_PUMP",
-        "dsn": "xxxxxxxxxxxxxxx",
-        "junctionId": "xxxxxxxxxxxxxxxxxx", // Unique ID needed to call the other API methods
-        "name": "Water Heater", // Custom nickname assigned in the mobile app
-        "serial": "xxxxxxxxxxxxx",
-        "install": {
-            "location": "Basement" // Install location set in the mobile app
-        },
-        "data": {
-            "__typename": "NextGenHeatPump",
-            "temperatureSetpoint": 130, // Current setpoint (target water temperature)
-            "temperatureSetpointPending": false,
-            "temperatureSetpointPrevious": 130,
-            "temperatureSetpointMaximum": 130, // Max possible setpoint - to increase this, manually adjust the setpoint using the buttons on the water heater
-            "modes": [ // Available operation modes
-                {
-                    "mode": "HYBRID",
-                    "controls": null
-                },
-                {
-                    "mode": "HEAT_PUMP",
-                    "controls": null
-                },
-                {
-                    "mode": "ELECTRIC",
-                    "controls": "SELECT_DAYS"
-                },
-                {
-                    "mode": "VACATION",
-                    "controls": "SELECT_DAYS"
-                }
-            ],
-            "isOnline": true,
-            "firmwareVersion": "2.14",
-            "hotWaterStatus": "LOW", // Current hot water availability ("LOW", "MEDIUM", or "HIGH")
-            "mode": "HEAT_PUMP", // Current operation mode
-            "modePending": false,
-            "vacationModeRemainingDays": 0,
-            "electricModeRemainingDays": 0
-        }
-    }
+    Device(
+        brand='aosmith',
+        model='HPTS-50 200 202172000',
+        device_type=DeviceType.NEXT_GEN_HEAT_PUMP,
+        dsn='xxxxxxxxxxxxxxx',
+        junction_id='xxxxxxxxxxxxxxxxxx', # Unique ID needed to call the other API methods
+        name='Water Heater', # Custom nickname assigned to your water heater in the mobile app
+        serial='xxxxxxxxxxxxx',
+        install_location='Basement', # Install location set in the mobile app
+        supported_modes=[ # Available operation modes for your water heater
+            SupportedOperationModeInfo(
+                mode=OperationMode.HYBRID, # Enum value of the mode (use this when calling update_mode)
+                original_name='HYBRID',    # Original name of the mode as returned by the API
+                has_day_selection=False    # Whether the mode supports day selection
+            ),
+            SupportedOperationModeInfo(
+                mode=OperationMode.HEAT_PUMP,
+                original_name='HEAT_PUMP',
+                has_day_selection=False
+            ),
+            SupportedOperationModeInfo(
+                mode=OperationMode.ELECTRIC,
+                original_name='ELECTRIC',
+                has_day_selection=True
+            ),
+            SupportedOperationModeInfo(
+                mode=OperationMode.VACATION,
+                original_name='VACATION',
+                has_day_selection=True
+            )
+        ],
+        status=DeviceStatus(
+            firmware_version='2.14', # Current installed firmware version
+            is_online=True, # Whether the water heater is currently connected to the internet
+            current_mode=OperationMode.HEAT_PUMP, # Current operation mode
+            mode_change_pending=False, # Whether a mode change is currently in progress
+            temperature_setpoint=145, # Current setpoint (target water temperature)
+            temperature_setpoint_pending=False, # Whether a setpoint change is currently in progress
+            temperature_setpoint_previous=145, # Previous setpoint
+            temperature_setpoint_maximum=145, # Maximum setpoint (to increase this, manually adjust the setpoint using the buttons on the water heater)
+            hot_water_status=HotWaterStatus.HIGH # Current hot water availability (low, medium, high)
+        )
+    )
 ]
 ```
 
@@ -130,7 +133,7 @@ await client.update_setpoint(junction_id, setpoint)
 
 Updates the setpoint (target water temperature) of the water heater.
 
-When using this method, the setpoint cannot be adjusted above the `temperatureSetpointMaximum` from the return value of `get_devices()`. To increase this maximum, manually adjust the setpoint using the buttons on the water heater.
+When using this method, the setpoint cannot be adjusted above the `temperature_setpoint_maximum` from the return value of `get_devices()`. To increase the maximum, manually adjust the setpoint using the buttons on the water heater.
 
 ### Parameters
 
@@ -146,18 +149,18 @@ None
 ## Update mode
 
 ```typescript
-await client.updateMode(junction_id, mode, days)
+await client.update_mode(junction_id, mode, days)
 ```
 
-Sets the operation mode of the water heater. To determine the list of modes supported by your water heater, check `data.modes[]` in the return value of `get_devices()`.
+Sets the operation mode of the water heater. To determine the list of modes supported by your water heater, check `supported_modes` in the `Device` object returned by `get_devices()`.
 
 ### Parameters
 
 | Parameter | Description |
 | --------- | ----------- |
 | `junction_id` | Unique ID of the water heater, obtained from `get_devices()` |
-| `mode` | New operation mode to set |
-| `days` | Optional. Number of days after which the device will automatically exit this mode. Only works for modes where `data.modes[].controls` from `get_devices()` is `"SELECT_DAYS"`.
+| `mode` | New operation mode to set. Must be a member of the `OperationMode` enum and must be a supported mode from `supported_modes`. |
+| `days` | Optional. Number of days after which the device will automatically exit this mode. Only works for modes where `has_day_selection` from `supported_modes` is `True`. |
 
 ### Return value
 
@@ -179,27 +182,25 @@ Gets energy use history data from the water heater.
 
 ### Return value
 
-```jsonc
-{
-    "average": 2.7552000000000003,
-    "graphData": [
-        {
-            "date": "2023-10-30T04:00:00.000Z",
-            "kwh": 2.01
-        },
-        {
-            "date": "2023-10-31T04:00:00.000Z",
-            "kwh": 1.542
-        },
-        {
-            "date": "2023-11-01T04:00:00.000Z",
-            "kwh": 1.908
-        },
-        /* ... */
-    ],
-    "lifetimeKwh": 132.825,
-    "startDate": "Oct 30"
-}
+```python
+EnergyUseData(
+    lifetime_kwh=234.309,
+    history=[
+        EnergyUseHistoryEntry(
+            date='2023-12-09T04:00:00.000Z',
+            energy_use_kwh=2.19
+        ),
+        EnergyUseHistoryEntry(
+            date='2023-12-10T04:00:00.000Z',
+            energy_use_kwh=3.786
+        ),
+        EnergyUseHistoryEntry(
+            date='2023-12-11T04:00:00.000Z',
+            energy_use_kwh=5.292
+        ),
+        # ...
+    ]
+)
 ```
 
 # Disclaimer
