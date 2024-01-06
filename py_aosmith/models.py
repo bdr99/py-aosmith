@@ -32,7 +32,7 @@ class DeviceStatus:
     temperature_setpoint_pending: bool
     temperature_setpoint_previous: int
     temperature_setpoint_maximum: int
-    hot_water_status: str
+    hot_water_status: HotWaterStatus
 
 @dataclass(frozen=True)
 class Device:
