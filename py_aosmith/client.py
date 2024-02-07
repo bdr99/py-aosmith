@@ -250,11 +250,16 @@ class AOSmithAPIClient:
             errors = response_json.get("errors")
             if any(error.get("extensions", {}).get("code") == "INVALID_CREDENTIALS" for error in errors):
                 raise AOSmithInvalidCredentialsException("Invalid email address or password")
-            elif "getEnergyUseData" in query and any(error.get("message", "") == "No data to display at this time." for error in errors):
+            elif query == ENERGY_USE_DATA_GRAPHQL_QUERY and any(error.get("message", "") == "No data to display at this time." for error in errors):
                 raise AOSmithEnergyUsageDataUnavailableException("Energy usage data is unavailable")
             else:
                 messages = ", ".join([error.get("message", "") for error in errors])
                 raise AOSmithUnknownException("Error: " + messages)
+        elif query == DEVICES_GRAPHQL_QUERY:
+            device_dicts: list[dict[str, Any]] = response_json.get("data", {}).get("devices", [])
+            for device_dict in device_dicts:
+                if device_dict.get("data", {}).get("isOnline") is None:
+                    raise AOSmithUnknownException("Device data is incomplete")
 
         return response_json
 
