@@ -7,6 +7,8 @@ import json
 import logging
 import urllib.parse
 
+from tenacity import before_sleep_log, retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+
 from .exceptions import (
     AOSmithEnergyUsageDataUnavailableException,
     AOSmithInvalidCredentialsException,
@@ -36,6 +38,8 @@ API_BASE_URL = "https://r1.wh8.co"
 MAX_RETRIES = 2
 
 TIMEOUT = aiohttp.ClientTimeout(total=20)
+
+logger = logging.getLogger(__name__)
 
 def build_passcode(email: str, password: str) -> str:
     data = {'email': email, 'password': password}
@@ -184,20 +188,22 @@ class AOSmithAPIClient:
         else:
             self.session = session
 
-        self.logger = logging.getLogger(__name__)
-
+    @retry(
+        retry=retry_if_exception_type(AOSmithUnknownException),
+        reraise=True,
+        wait=wait_fixed(5),
+        stop=stop_after_attempt(4),
+        before_sleep=before_sleep_log(logger, logging.DEBUG)
+    )
     async def __send_graphql_query(
         self,
         query: str,
         variables: dict[str, Any],
         login_required: bool,
-        retry_count: int = 0
+        retrying_after_login: bool = False
     ) -> dict[str, Any]:
-        if retry_count > MAX_RETRIES:
-            raise AOSmithUnknownException("Request failed - max retries exceeded")
-
         query_log = query.replace('\n', ' ')
-        self.logger.debug(f"Sending query, variables: {variables}, login_required: {login_required}, retry_count: {retry_count}, query: {query_log}")
+        logger.debug(f"Sending query, variables: {variables}, login_required: {login_required}, retrying_after_login: {retrying_after_login}, query: {query_log}")
 
         headers = {}
 
@@ -206,7 +212,7 @@ class AOSmithAPIClient:
                 await self.__login()
                 if self.token is None:
                     raise AOSmithUnknownException("Login failed")
-                self.logger.debug("Successfully logged in")
+                logger.debug("Successfully logged in")
 
             headers["Authorization"] = f"Bearer {self.token}"
 
@@ -221,18 +227,20 @@ class AOSmithAPIClient:
                 },
                 timeout=TIMEOUT
             )
-            self.logger.debug(f"Received response, status code: {response.status}")
-            self.logger.debug(f"Response body: {await response.text()}")
+            logger.debug(f"Received response, status code: {response.status}")
+            logger.debug(f"Response body: {await response.text()}")
         except asyncio.TimeoutError:
             raise AOSmithUnknownException("Request timed out")
         except Exception as err:
-            self.logger.exception("Request failed", exc_info=err)
+            logger.exception("Request failed", exc_info=err)
             raise AOSmithUnknownException("Request failed")
 
         if response.status == 401:
-            self.logger.debug("Access token may be expired - trying to log in again")
+            if retrying_after_login:
+                raise AOSmithUnknownException("Received status code 401 after logging in")
+            logger.debug("Access token may be expired - trying to log in again")
             await self.__login()
-            return await self.__send_graphql_query(query, variables, login_required, retry_count=retry_count + 1)
+            return await self.__send_graphql_query(query, variables, login_required, retrying_after_login=True)
         elif response.status != 200:
             raise AOSmithUnknownException(f"Received status code {response.status}")
 
@@ -397,7 +405,7 @@ class AOSmithAPIClient:
 
                 energy_use_data_by_junction_id[device["junctionId"]] = response.get("data", {}).get("getEnergyUseData")
             except Exception as err:
-                self.logger.exception("Failed to get energy use data", exc_info=err)
+                logger.exception("Failed to get energy use data", exc_info=err)
 
         return {
             "devices": all_device_data,
