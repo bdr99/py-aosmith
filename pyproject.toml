@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "py-aosmith"
-version = "1.0.6"
+version = "1.0.7"
 description = "A Python client library for A. O. Smith water heaters"
 authors = ["Brandon Rothweiler <brandonrothweiler@gmail.com>"]
 license = "MIT"
