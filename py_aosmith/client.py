@@ -8,6 +8,7 @@ import logging
 import urllib.parse
 
 from .exceptions import (
+    AOSmithEnergyUsageDataUnavailableException,
     AOSmithInvalidCredentialsException,
     AOSmithInvalidParametersException,
     AOSmithUnknownException
@@ -241,6 +242,8 @@ class AOSmithAPIClient:
             errors = response_json.get("errors")
             if any(error.get("extensions", {}).get("code") == "INVALID_CREDENTIALS" for error in errors):
                 raise AOSmithInvalidCredentialsException("Invalid email address or password")
+            elif "getEnergyUseData" in query and any(error.get("message", "") == "No data to display at this time." for error in errors):
+                raise AOSmithEnergyUsageDataUnavailableException("Energy usage data is unavailable")
             else:
                 messages = ", ".join([error.get("message", "") for error in errors])
                 raise AOSmithUnknownException("Error: " + messages)
@@ -322,14 +325,17 @@ class AOSmithAPIClient:
             raise AOSmithUnknownException("Failed to update setpoint")
 
     async def __get_energy_use_data_by_dsn(self, dsn: str, device_type: str) -> EnergyUseData:
-        response = await self.__send_graphql_query(
-            ENERGY_USE_DATA_GRAPHQL_QUERY,
-            {
-                "dsn": dsn,
-                "deviceType": device_type
-            },
-            True
-        )
+        try:
+            response = await self.__send_graphql_query(
+                ENERGY_USE_DATA_GRAPHQL_QUERY,
+                {
+                    "dsn": dsn,
+                    "deviceType": device_type
+                },
+                True
+            )
+        except AOSmithEnergyUsageDataUnavailableException:
+            return EnergyUseData(lifetime_kwh=0, history=[])
 
         energy_use_data_dict = response.get("data", {}).get("getEnergyUseData")
         if energy_use_data_dict is None:
