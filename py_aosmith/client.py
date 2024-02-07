@@ -191,8 +191,8 @@ class AOSmithAPIClient:
     @retry(
         retry=retry_if_exception_type(AOSmithUnknownException),
         reraise=True,
-        wait=wait_fixed(5),
-        stop=stop_after_attempt(4),
+        wait=wait_fixed(10),
+        stop=stop_after_attempt(6),
         before_sleep=before_sleep_log(logger, logging.DEBUG)
     )
     async def __send_graphql_query(
