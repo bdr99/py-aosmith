@@ -5,9 +5,23 @@ water heater using the A. O. Smith mobile app ([iOS](https://apps.apple.com/us/a
 
 # Known Compatible Models
 
-- [HPTS-50](https://www.hotwater.com/products/HPTS-50-SG200.html)
-- [HPTS-66](https://www.hotwater.com/products/HPTS-66-SG200.html)
-- [HPTS-80](https://www.hotwater.com/products/HPTS-80-SG200.html)
+- EE9-40R55DV
+- EE9-40H55DV
+- EE9-50R55DV
+- EE9-50H55DV
+- EE12-50R55DVF
+- EE12-50H55DVF
+- EE12-55H55DVF
+- HPS10-50H45DV
+- HPS10-66H45DV
+- HPS10-80H45DV
+- HPSX-50-DHPT
+- HPTS-50
+- HPTS-66
+- HPTS-80
+- HPV10-50H01DV
+- HPV10-66H01DV
+- HPV10-80H01DV
 
 If your water heater is not working with this library, but it can be controlled using the A. O. Smith mobile app, please [open an issue](https://github.com/bdr99/py-aosmith/issues/new) so that support can be added.
 
