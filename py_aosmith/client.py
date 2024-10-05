@@ -108,7 +108,11 @@ def map_device_dict_to_device(device_dict: dict[str, Any]) -> Device:
         raise AOSmithUnknownException("Missing required data keys")
 
     # The value returned by the API increases as the hot water is used, so we need to normalize it
-    normalized_hot_water_status = 100 - device_dict["data"]["hotWaterStatus"]
+    hot_water_status = device_dict["data"]["hotWaterStatus"]
+    if hot_water_status is None or not isinstance(hot_water_status, (int, float)):
+        normalized_hot_water_status = None
+    else:
+        normalized_hot_water_status = 100 - hot_water_status
 
     return Device(
         brand=device_dict["brand"],
