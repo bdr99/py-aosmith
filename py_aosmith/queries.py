@@ -89,13 +89,11 @@ query devices($forceUpdate: Boolean, $junctionIds: [String]) {
         highTemperature {
           email
           sms
-
           value
         }
         lowTemperature {
           email
           sms
-
           value
         }
       }
@@ -104,8 +102,10 @@ query devices($forceUpdate: Boolean, $junctionIds: [String]) {
     deviceType
     dsn
     hardware {
+      iosShowsCaptivePortal
       hasBluetooth
       interface
+      connectors
     }
     id
     install {
@@ -364,6 +364,23 @@ query devices($forceUpdate: Boolean, $junctionIds: [String]) {
 
       ... on Mustang {
         firmwareVersion
+
+        recirculation {
+          recirculationCapability
+          pumpModeOnDemand
+          timer1 {
+            start
+            end
+            isEnabled
+            isUnset
+          }
+          timer2 {
+            start
+            end
+            isEnabled
+            isUnset
+          }
+        }
       }
     }
   }

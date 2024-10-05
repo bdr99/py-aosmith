@@ -5,11 +5,6 @@ class DeviceType(Enum):
     RE3_CONNECTED = "re3_connected"
     NEXT_GEN_HEAT_PUMP = "next_gen_heat_pump"
 
-class HotWaterStatus(Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-
 class OperationMode(Enum):
     HYBRID = "hybrid"
     HEAT_PUMP = "heat_pump"
@@ -32,7 +27,7 @@ class DeviceStatus:
     temperature_setpoint_pending: bool
     temperature_setpoint_previous: int
     temperature_setpoint_maximum: int
-    hot_water_status: HotWaterStatus
+    hot_water_status: int
 
 @dataclass(frozen=True)
 class Device:

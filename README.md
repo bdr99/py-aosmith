@@ -133,7 +133,7 @@ None
             temperature_setpoint_pending=False, # Whether a setpoint change is currently in progress
             temperature_setpoint_previous=145, # Previous setpoint
             temperature_setpoint_maximum=145, # Maximum setpoint (to increase this, manually adjust the setpoint using the buttons on the water heater)
-            hot_water_status=HotWaterStatus.HIGH # Current hot water availability (low, medium, high)
+            hot_water_status=80 # Current hot water availability as a percentage
         )
     )
 ]
