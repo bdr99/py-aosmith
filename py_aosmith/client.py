@@ -33,6 +33,8 @@ from .queries import (
 )
 
 API_BASE_URL = "https://r1.wh8.co"
+APP_VERSION = "13.0.1"
+USER_AGENT = "okhttp/4.9.2"
 
 MAX_RETRIES = 2
 
@@ -201,7 +203,11 @@ class AOSmithAPIClient:
         query_log = query.replace('\n', ' ')
         logger.debug(f"Sending query, variables: {variables}, login_required: {login_required}, retrying_after_login: {retrying_after_login}, query: {query_log}")
 
-        headers = {}
+        headers = {
+            "brand": "aosmith",
+            "version": APP_VERSION,
+            "User-Agent": USER_AGENT
+        }
 
         if login_required:
             if self.token is None:
@@ -210,7 +216,7 @@ class AOSmithAPIClient:
                     raise AOSmithUnknownException("Login failed")
                 logger.debug("Successfully logged in")
 
-            headers["Authorization"] = f"Bearer {self.token}"
+            headers["authorization"] = f"Bearer {self.token}"
 
         try:
             response = await self.session.request(
