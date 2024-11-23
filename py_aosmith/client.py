@@ -32,7 +32,7 @@ from .queries import (
     ENERGY_USE_DATA_GRAPHQL_QUERY
 )
 
-API_BASE_URL = "https://r2.wh8.co"
+API_BASE_URL = "https://r1.wh8.co"
 
 MAX_RETRIES = 2
 
