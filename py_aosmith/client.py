@@ -32,8 +32,8 @@ from .queries import (
     ENERGY_USE_DATA_GRAPHQL_QUERY
 )
 
-API_BASE_URL = "https://r1.wh8.co"
-APP_VERSION = "13.0.1"
+API_BASE_URL = "https://r2.wh8.co"
+APP_VERSION = "13.0.2"
 USER_AGENT = "okhttp/4.9.2"
 
 MAX_RETRIES = 2
@@ -89,6 +89,23 @@ def map_mode_dict_to_operation_mode(mode_dict: dict[str, Any]) -> SupportedOpera
         has_day_selection=has_day_selection
     )
 
+def parse_hot_water_status(hot_water_status: int | str | None) -> int | None:
+    if hot_water_status is None:
+        return None
+    elif isinstance(hot_water_status, str):
+        hot_water_status_str_upper = hot_water_status.upper()
+        if hot_water_status_str_upper == "LOW":
+            return 0
+        elif hot_water_status_str_upper == "MEDIUM":
+            return 50
+        elif hot_water_status_str_upper == "HIGH":
+            return 100
+    elif isinstance(hot_water_status, int):
+        # The value returned by the API increases as the hot water is used, so we need to normalize it
+        return 100 - hot_water_status
+
+    raise AOSmithUnknownException("Unknown hot water status")
+
 def map_device_dict_to_device(device_dict: dict[str, Any]) -> Device:
     device_type_str = device_dict.get("data", {}).get("__typename")
     if device_type_str is None:
@@ -109,13 +126,6 @@ def map_device_dict_to_device(device_dict: dict[str, Any]) -> Device:
     if not all(key in device_dict["data"] for key in required_data_keys):
         raise AOSmithUnknownException("Missing required data keys")
 
-    # The value returned by the API increases as the hot water is used, so we need to normalize it
-    hot_water_status = device_dict["data"]["hotWaterStatus"]
-    if hot_water_status is None or not isinstance(hot_water_status, (int, float)):
-        normalized_hot_water_status = None
-    else:
-        normalized_hot_water_status = 100 - hot_water_status
-
     return Device(
         brand=device_dict["brand"],
         model=device_dict["model"],
@@ -135,7 +145,7 @@ def map_device_dict_to_device(device_dict: dict[str, Any]) -> Device:
             temperature_setpoint_pending=device_dict["data"]["temperatureSetpointPending"],
             temperature_setpoint_previous=device_dict["data"]["temperatureSetpointPrevious"],
             temperature_setpoint_maximum=device_dict["data"]["temperatureSetpointMaximum"],
-            hot_water_status=normalized_hot_water_status
+            hot_water_status=parse_hot_water_status(device_dict["data"]["hotWaterStatus"]),
         )
     )
 
