@@ -389,6 +389,10 @@ query devices($forceUpdate: Boolean, $junctionIds: [String]) {
           }
         }
       }
+
+      ... on MustangNCSC {
+        firmwareVersion
+      }
     }
   }
 }
