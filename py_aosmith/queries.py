@@ -34,6 +34,13 @@ query devices($forceUpdate: Boolean, $junctionIds: [String]) {
                 mode
                 modePending
             }
+            ... on RE3Premium {
+                firmwareVersion
+                hotWaterStatus
+                mode
+                modePending
+                hotWaterPlusLevel
+            }
         }
     }
 }

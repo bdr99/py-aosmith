@@ -54,39 +54,58 @@ def device_is_compatible(device_dict: dict[str, Any]) -> bool:
     if device_type is None:
         return False
 
-    return device_type in ["NextGenHeatPump", "RE3Connected"]
+    return device_type in ["NextGenHeatPump", "RE3Connected", "RE3Premium"]
+
+def device_type_supports_hot_water_plus(device_type: DeviceType) -> bool:
+    return device_type == DeviceType.RE3_PREMIUM
 
 def map_mode_str_to_operation_mode_type(mode_str: str) -> OperationMode:
     if mode_str == "HYBRID":
         return OperationMode.HYBRID
     elif mode_str == "HEAT_PUMP":
         return OperationMode.HEAT_PUMP
-    elif mode_str == "ELECTRIC":
+    elif mode_str in ["ELECTRIC", "STANDARD"]:
         return OperationMode.ELECTRIC
     elif mode_str == "VACATION":
         return OperationMode.VACATION
-    elif mode_str == "STANDARD":
-        return OperationMode.ELECTRIC
+    elif mode_str == "GUEST":
+        return OperationMode.GUEST
     else:
         raise AOSmithUnknownException("Unknown mode")
+
+def map_hot_water_plus_status_str_to_int(hot_water_plus_status_str: str) -> int | None:
+    if hot_water_plus_status_str == "OFF":
+        return 0
+    elif hot_water_plus_status_str == "ONE":
+        return 1
+    elif hot_water_plus_status_str == "TWO":
+        return 2
+    elif hot_water_plus_status_str == "THREE":
+        return 3
+    else:
+        return None
 
 def map_mode_dict_to_operation_mode(mode_dict: dict[str, Any]) -> SupportedOperationModeInfo:
     mode_str = mode_dict.get("mode")
     if mode_str is None:
         raise AOSmithUnknownException("Failed to determine mode")
 
+    has_day_selection = False
+    supports_hot_water_plus = False
+
     controls_str = mode_dict.get("controls")
     if controls_str == "SELECT_DAYS":
         has_day_selection = True
-    elif controls_str is None:
-        has_day_selection = False
-    else:
+    elif controls_str == "HOT_WATER_PLUS":
+        supports_hot_water_plus = True
+    elif controls_str is not None:
         raise AOSmithUnknownException("Unknown controls")
 
     return SupportedOperationModeInfo(
         mode=map_mode_str_to_operation_mode_type(mode_str),
         original_name=mode_str,
-        has_day_selection=has_day_selection
+        has_day_selection=has_day_selection,
+        supports_hot_water_plus=supports_hot_water_plus
     )
 
 def parse_hot_water_status(hot_water_status: int | str | None) -> int | None:
@@ -115,6 +134,8 @@ def map_device_dict_to_device(device_dict: dict[str, Any]) -> Device:
         device_type = DeviceType.NEXT_GEN_HEAT_PUMP
     elif device_type_str == "RE3Connected":
         device_type = DeviceType.RE3_CONNECTED
+    elif device_type_str == "RE3Premium":
+        device_type = DeviceType.RE3_PREMIUM
     else:
         raise AOSmithUnknownException("Unknown device type")
 
@@ -136,6 +157,7 @@ def map_device_dict_to_device(device_dict: dict[str, Any]) -> Device:
         serial=device_dict["serial"],
         install_location=device_dict["install"]["location"],
         supported_modes=list(map(map_mode_dict_to_operation_mode, device_dict["data"]["modes"])),
+        supports_hot_water_plus=device_type_supports_hot_water_plus(device_type),
         status=DeviceStatus(
             firmware_version=device_dict["data"]["firmwareVersion"],
             is_online=device_dict["data"]["isOnline"],
@@ -146,6 +168,7 @@ def map_device_dict_to_device(device_dict: dict[str, Any]) -> Device:
             temperature_setpoint_previous=device_dict["data"]["temperatureSetpointPrevious"],
             temperature_setpoint_maximum=device_dict["data"]["temperatureSetpointMaximum"],
             hot_water_status=parse_hot_water_status(device_dict["data"]["hotWaterStatus"]),
+            hot_water_plus_level=map_hot_water_plus_status_str_to_int(device_dict["data"].get("hotWaterPlusLevel", ""))
         )
     )
 
@@ -372,7 +395,13 @@ class AOSmithAPIClient:
         device_basic_info = await self.__get_device_basic_info_by_junction_id(junction_id)
         return await self.__get_energy_use_data_by_dsn(device_basic_info.dsn, device_basic_info.device_type)
 
-    async def update_mode(self, junction_id: str, mode: OperationMode, days: int | None = None) -> None:
+    async def update_mode(
+        self,
+        junction_id: str,
+        mode: OperationMode,
+        days: int | None = None,
+        hot_water_plus_level: int | None = None
+    ) -> None:
         device = await self.__get_device_by_junction_id(junction_id)
 
         # check if mode is supported
@@ -391,6 +420,25 @@ class AOSmithAPIClient:
         mode_payload = { "mode": desired_mode.original_name }
         if desired_mode.has_day_selection:
             mode_payload["days"] = days
+
+        if device.supports_hot_water_plus:
+            # Devices that support Hot Water+ always send hotWaterPlusLevel when setting the mode, even for modes that don't support it
+            if hot_water_plus_level is None:
+                if desired_mode.supports_hot_water_plus:
+                    # No level specified & Hot Water+ is supported for this mode -> use the current level
+                    mode_payload["hotWaterPlusLevel"] = 0 if device.status.hot_water_plus_level is None else device.status.hot_water_plus_level
+                else:
+                    # No level specified & Hot Water+ is not supported for this mode -> set level to 0
+                    mode_payload["hotWaterPlusLevel"] = 0
+            else:
+                if not isinstance(hot_water_plus_level, int) or hot_water_plus_level < 0 or hot_water_plus_level > 3:
+                    raise AOSmithInvalidParametersException("Invalid Hot Water+ level")
+                elif hot_water_plus_level in [1, 2, 3] and not desired_mode.supports_hot_water_plus:
+                    raise AOSmithInvalidParametersException("Hot Water+ not supported for this operation mode")
+                mode_payload["hotWaterPlusLevel"] = hot_water_plus_level
+        else:
+            if hot_water_plus_level is not None:
+                raise AOSmithInvalidParametersException("Hot Water+ not supported for this device")
 
         response = await self.__send_graphql_query(
             "mutation updateMode($junctionId: String!, $mode: ModeInput!) { updateMode(junctionId: $junctionId, mode: $mode) }",

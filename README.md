@@ -60,7 +60,7 @@ for device in devices:
 
 ## Initialize API Client
 
-```typescript
+```python
 AOSmithAPIClient(email, password)
 ```
 
@@ -77,7 +77,7 @@ Returns an instance of `AOSmithAPIClient` which can be used to invoke the below 
 
 ## Get List of Devices
 
-```typescript
+```python
 await client.get_devices()
 ```
 
@@ -104,26 +104,31 @@ None
         install_location='Basement', # Install location set in the mobile app
         supported_modes=[ # Available operation modes for your water heater
             SupportedOperationModeInfo(
-                mode=OperationMode.HYBRID, # Enum value of the mode (use this when calling update_mode)
-                original_name='HYBRID',    # Original name of the mode as returned by the API
-                has_day_selection=False    # Whether the mode supports day selection
+                mode=OperationMode.HYBRID,      # Enum value of the mode (use this when calling update_mode)
+                original_name='HYBRID',         # Original name of the mode as returned by the API
+                has_day_selection=False,        # Whether the mode supports day selection
+                supports_hot_water_plus=False   # Whether Hot Water+ can be used in this mode, if supported by the device
             ),
             SupportedOperationModeInfo(
                 mode=OperationMode.HEAT_PUMP,
                 original_name='HEAT_PUMP',
-                has_day_selection=False
+                has_day_selection=False,
+                supports_hot_water_plus=False
             ),
             SupportedOperationModeInfo(
                 mode=OperationMode.ELECTRIC,
                 original_name='ELECTRIC',
-                has_day_selection=True
+                has_day_selection=True,
+                supports_hot_water_plus=False
             ),
             SupportedOperationModeInfo(
                 mode=OperationMode.VACATION,
                 original_name='VACATION',
-                has_day_selection=True
+                has_day_selection=True,
+                supports_hot_water_plus=False
             )
         ],
+        supports_hot_water_plus=True, # Whether the device supports the Hot Water+ feature
         status=DeviceStatus(
             firmware_version='2.14', # Current installed firmware version
             is_online=True, # Whether the water heater is currently connected to the internet
@@ -134,6 +139,7 @@ None
             temperature_setpoint_previous=145, # Previous setpoint
             temperature_setpoint_maximum=145, # Maximum setpoint (to increase this, manually adjust the setpoint using the buttons on the water heater)
             hot_water_status=80 # Current hot water availability as a percentage
+            hot_water_plus_level=0 # Current Hot Water+ setting (range: 0-3, 0 = off, None = unsupported)
         )
     )
 ]
@@ -141,7 +147,7 @@ None
 
 ## Update setpoint
 
-```typescript
+```python
 await client.update_setpoint(junction_id, setpoint)
 ```
 
@@ -162,8 +168,8 @@ None
 
 ## Update mode
 
-```typescript
-await client.update_mode(junction_id, mode, days)
+```python
+await client.update_mode(junction_id, mode, days, hot_water_plus_level)
 ```
 
 Sets the operation mode of the water heater. To determine the list of modes supported by your water heater, check `supported_modes` in the `Device` object returned by `get_devices()`.
@@ -175,6 +181,7 @@ Sets the operation mode of the water heater. To determine the list of modes supp
 | `junction_id` | Unique ID of the water heater, obtained from `get_devices()` |
 | `mode` | New operation mode to set. Must be a member of the `OperationMode` enum and must be a supported mode from `supported_modes`. |
 | `days` | Optional. Number of days after which the device will automatically exit this mode. Only works for modes where `has_day_selection` from `supported_modes` is `True`. |
+| `hot_water_plus_level` | Optional. Set the level for the Hot Water+ feature from 0-3, if supported by the device and operation mode. If unsupported, an `AOSmithInvalidParametersException` will be raised. |
 
 ### Return value
 
@@ -182,7 +189,7 @@ None
 
 ## Get energy use data
 
-```typescript
+```python
 await client.get_energy_use_data(junction_id)
 ```
 

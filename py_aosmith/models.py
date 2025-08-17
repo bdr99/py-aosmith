@@ -2,13 +2,15 @@ from dataclasses import dataclass
 from enum import Enum
 
 class DeviceType(Enum):
-    RE3_CONNECTED = "re3_connected"
     NEXT_GEN_HEAT_PUMP = "next_gen_heat_pump"
+    RE3_CONNECTED = "re3_connected"
+    RE3_PREMIUM = "re3_premium"
 
 class OperationMode(Enum):
-    HYBRID = "hybrid"
-    HEAT_PUMP = "heat_pump"
     ELECTRIC = "electric"
+    GUEST = "guest"
+    HEAT_PUMP = "heat_pump"
+    HYBRID = "hybrid"
     VACATION = "vacation"
 
 @dataclass(frozen=True)
@@ -16,6 +18,7 @@ class SupportedOperationModeInfo:
     mode: OperationMode
     original_name: str
     has_day_selection: bool
+    supports_hot_water_plus: bool
 
 @dataclass(frozen=True)
 class DeviceStatus:
@@ -28,6 +31,7 @@ class DeviceStatus:
     temperature_setpoint_previous: int
     temperature_setpoint_maximum: int
     hot_water_status: int | None
+    hot_water_plus_level: int | None
 
 @dataclass(frozen=True)
 class Device:
@@ -40,6 +44,7 @@ class Device:
     serial: str
     install_location: str
     supported_modes: list[SupportedOperationModeInfo]
+    supports_hot_water_plus: bool
     status: DeviceStatus
 
 @dataclass(frozen=True)
