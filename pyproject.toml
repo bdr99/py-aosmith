@@ -17,7 +17,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.10"
 aiohttp = "^3.8.6"
-tenacity = "^8.2.3"
+tenacity = ">=8.2.3,<10.0.0"
 
 
 [build-system]
