@@ -1,7 +1,7 @@
 # py-aosmith
 
 This is an API Client for A. O. Smith iCOMM-enabled water heaters. If you can control your
-water heater using the A. O. Smith mobile app ([iOS](https://apps.apple.com/us/app/a-o-smith/id456489822)/[Android](https://play.google.com/store/apps/details?id=com.aosmith.warrantycheck)), then it should be compatible with this library.
+water heater using the iCOMM mobile app ([iOS](https://apps.apple.com/app/icomm-connectivity/id1494213395)/[Android](https://play.google.com/store/apps/details?id=com.aosmith.icomm)), then it should be compatible with this library.
 
 # Known Compatible Models
 
@@ -23,7 +23,7 @@ water heater using the A. O. Smith mobile app ([iOS](https://apps.apple.com/us/a
 - HPV10-66H01DV
 - HPV10-80H01DV
 
-If your water heater is not working with this library, but it can be controlled using the A. O. Smith mobile app, please [open an issue](https://github.com/bdr99/py-aosmith/issues/new) so that support can be added.
+If your water heater is not working with this library, but it can be controlled using the iCOMM mobile app, please [open an issue](https://github.com/bdr99/py-aosmith/issues/new) so that support can be added.
 
 Similarly, if your water heater is working with this library, but is not listed here, please [open an issue](https://github.com/bdr99/py-aosmith/issues/new) so it can be added to the list.
 
@@ -33,7 +33,7 @@ To install the latest release from [PyPI](https://pypi.org/project/py-aosmith/),
 
 # Quick Start
 
-You will need a compatible water heater which is already connected to Wi-Fi and linked to your A. O. Smith account.
+You will need a compatible water heater which is already connected to Wi-Fi and linked to your iCOMM account.
 
 This example initializes the API client and gets a list of water heaters linked to the account. Then, for each water heater, it updates the setpoint to 120 degrees.
 
@@ -68,8 +68,8 @@ AOSmithAPIClient(email, password)
 
 | Parameter | Description |
 | --------- | ----------- |
-| `email`   | The email address for your A. O. Smith account |
-| `password` | The password for your A. O. Smith account |
+| `email`   | The email address for your iCOMM account |
+| `password` | The password for your iCOMM account |
 
 ### Return value
 
@@ -81,9 +81,9 @@ Returns an instance of `AOSmithAPIClient` which can be used to invoke the below 
 await client.get_devices()
 ```
 
-Gets a list of water heaters linked with the A. O. Smith account. May only include devices which are known to be compatible with this library.
+Gets a list of water heaters linked with the iCOMM account. May only include devices which are known to be compatible with this library.
 
-If your water heater can be controlled in the A. O. Smith mobile app, but is not included in the return value of this method, please [open an issue](https://github.com/bdr99/py-aosmith/issues/new) so that support can be added.
+If your water heater can be controlled in the iCOMM mobile app, but is not included in the return value of this method, please [open an issue](https://github.com/bdr99/py-aosmith/issues/new) so that support can be added.
 
 ### Parameters
 
