@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 class DeviceType(Enum):
+    HEAT_PUMP = "heat_pump"
     NEXT_GEN_HEAT_PUMP = "next_gen_heat_pump"
     RE3_CONNECTED = "re3_connected"
     RE3_PREMIUM = "re3_premium"

@@ -54,7 +54,7 @@ def device_is_compatible(device_dict: dict[str, Any]) -> bool:
     if device_type is None:
         return False
 
-    return device_type in ["NextGenHeatPump", "RE3Connected", "RE3Premium"]
+    return device_type in ["HeatPump", "NextGenHeatPump", "RE3Connected", "RE3Premium"]
 
 def device_type_supports_hot_water_plus(device_type: DeviceType) -> bool:
     return device_type == DeviceType.RE3_PREMIUM
@@ -62,7 +62,7 @@ def device_type_supports_hot_water_plus(device_type: DeviceType) -> bool:
 def map_mode_str_to_operation_mode_type(mode_str: str) -> OperationMode:
     if mode_str == "HYBRID":
         return OperationMode.HYBRID
-    elif mode_str == "HEAT_PUMP":
+    elif mode_str in ["HEAT_PUMP", "EFFICIENCY"]:
         return OperationMode.HEAT_PUMP
     elif mode_str in ["ELECTRIC", "STANDARD"]:
         return OperationMode.ELECTRIC
@@ -130,7 +130,9 @@ def map_device_dict_to_device(device_dict: dict[str, Any]) -> Device:
     if device_type_str is None:
         raise AOSmithUnknownException("Failed to determine device type")
 
-    if device_type_str == "NextGenHeatPump":
+    if device_type_str == "HeatPump":
+        device_type = DeviceType.HEAT_PUMP
+    elif device_type_str == "NextGenHeatPump":
         device_type = DeviceType.NEXT_GEN_HEAT_PUMP
     elif device_type_str == "RE3Connected":
         device_type = DeviceType.RE3_CONNECTED

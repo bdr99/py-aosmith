@@ -22,6 +22,12 @@ query devices($forceUpdate: Boolean, $junctionIds: [String]) {
                 controls
             }
             isOnline
+            ... on HeatPump {
+                firmwareVersion
+                hotWaterStatus
+                mode
+                modePending
+            }
             ... on NextGenHeatPump {
                 firmwareVersion
                 hotWaterStatus
