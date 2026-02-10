@@ -32,9 +32,9 @@ from .queries import (
     ENERGY_USE_DATA_GRAPHQL_QUERY
 )
 
-API_BASE_URL = "https://r2.wh8.co"
-APP_VERSION = "13.0.8"
-USER_AGENT = "okhttp/4.9.2"
+API_BASE_URL = "https://r1.wh8.co"
+APP_VERSION = "14.0.0"
+USER_AGENT = "okhttp/4.12.0"
 
 MAX_RETRIES = 2
 

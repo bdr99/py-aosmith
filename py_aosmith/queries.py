@@ -399,6 +399,40 @@ query devices($forceUpdate: Boolean, $junctionIds: [String]) {
       ... on MustangNCSC {
         firmwareVersion
       }
+
+      ... on Baja {
+        firmwareVersion
+        hotWaterStatus
+        isCtaUcmPresent
+        isDemandResponsePaused
+        isEnrolled
+        mode
+        modePending
+        vacationModeRemainingDays
+        canEditTimeOfUse
+
+        timeOfUseData {
+          appliedOn
+          energyUsePreference
+          tariffCode
+          tariffID
+          utility
+          utilityID
+        }
+
+        consumerScheduleData {
+          appliedOn
+          schedules {
+            days
+            id
+            name
+            times {
+              time
+              meridiem
+            }
+          }
+        }
+      }
     }
   }
 }
