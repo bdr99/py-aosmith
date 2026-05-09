@@ -38,22 +38,29 @@ You will need a compatible water heater which is already connected to Wi-Fi and 
 This example initializes the API client and gets a list of water heaters linked to the account. Then, for each water heater, it updates the setpoint to 120 degrees.
 
 ```python
+import asyncio
+
 from py_aosmith import AOSmithAPIClient
 from py_aosmith.models import OperationMode
 
-# Initialize API client
-client = AOSmithAPIClient("myemail@example.com", "mypassword")
+async def main():
+    # Initialize API client
+    client = AOSmithAPIClient("myemail@example.com", "mypassword")
 
-# Get list of water heaters linked to the account
-devices = await client.get_devices()
+    # Get list of water heaters linked to the account
+    devices = await client.get_devices()
 
-# Loop through the registered water heaters
-for device in devices:
-    # Update the setpoint to 120 degrees
-    await client.update_setpoint(device.junction_id, 120);
+    # Loop through the registered water heaters
+    for device in devices:
+        # Update the setpoint to 120 degrees
+        await client.update_setpoint(device.junction_id, 120);
 
-    # Set the operation mode to heat pump
-    await client.update_mode(device.junction_id, OperationMode.HEAT_PUMP)
+        # Set the operation mode to heat pump
+        await client.update_mode(device.junction_id, OperationMode.HEAT_PUMP)
+
+    await client.close()
+
+asyncio.run(main())
 ```
 
 # API Documentation
